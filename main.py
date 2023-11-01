@@ -6,17 +6,16 @@
 # Import the necessary libraries.
 import PyQt5
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chromium.options import Options  
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 from selenium.common.exceptions import NoSuchElementException
 from time import sleep
-from webdriver_manager.chrome import ChromeDriverManager
+from webdriver_manager.chromium import ChromiumDriverManager  
 from bs4 import BeautifulSoup
 import getpass
-import openai
 import os
 import time
 import sqlite3
@@ -37,21 +36,28 @@ LOCATIONS = ['pullman', 'colfax', 'moscow']
 class Selenium():
     # Define a method to initialize the browser.
     def __init__(self):
+        chromium_options = Options()
         # Close the Chrome instance if it is already running.
-        os.system("taskkill /f /im chrome.exe")
+        if sys.platform == "win32":
+            os.system("taskkill /f /im chromium.exe")
+            user_data_dir = f"C:\\Users\\{USER}\\AppData\\Local\\Chromium\\User Data"
+
+            chromium_options.add_argument(f"--user-data-dir=C:\\Users\\{USER}\\AppData\\Local\\Google\\Chrome\\User Data")
+        else:  # Assuming Linux
+            os.system("pkill chromium")
+            user_data_dir = f"/home/{USER}/.config/chromium/User Data"
+
+            chromium_options.add_argument(f"--user-data-dir={user_data_dir}")
         # Set the options for the Chrome browser.
-        chrome_options = Options()
-        # chrome_options.add_argument("--headless")
-        # Add a user data directory as an argument for options.
-        chrome_options.add_argument(
-            f"--user-data-dir=C:\\Users\\{USER}\\AppData\\Local\\Google\\Chrome\\User Data")
-        chrome_options.add_argument("profile-directory=Default")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--no-sandbox")
+        
+        chromium_options.add_argument("--headless")
+        chromium_options.add_argument("profile-directory=Default")
+        chromium_options.add_argument("--disable-dev-shm-usage")
+        chromium_options.add_argument("--no-sandbox")
 
         # Initialize the Chrome browser using the ChromeDriverManager.
-        self.browser = webdriver.Chrome(
-            ChromeDriverManager().install(), options=chrome_options)
+        self.browser = webdriver.Chromium(
+            ChromiumDriverManager().install(), options=chromium_options)
 
     # Define a method to get the page source using Selenium.
     def get_page_source(self, url):
@@ -59,6 +65,7 @@ class Selenium():
         try:
             # Load the URL.
             self.browser.get(url)
+            
             
             # Wait for the page to load.
             WebDriverWait(self.browser, 10).until(EC.presence_of_element_located(
